@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HTTP Status Guide</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f0f;
+      --surface: #161616;
+      --border: #222;
+      --text: #e8e8e8;
+      --muted: #666;
+      --c1: #4a9eff;
+      --c2: #3ecf8e;
+      --c3: #f5a623;
+      --c4: #e05c5c;
+      --c5: #b06af5;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 3rem 2rem 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    h1 span {
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .search-wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 2rem 1.5rem;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .search-wrap input::placeholder { color: var(--muted); }
+    .search-wrap input:focus { border-color: #444; }
+
+    .filters {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 2rem 2rem;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.35rem 0.85rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+
+    .filter-btn:hover, .filter-btn.active {
+      color: var(--text);
+      border-color: #444;
+      background: var(--surface);
+    }
+
+    .filter-btn[data-cat="1"].active { border-color: var(--c1); color: var(--c1); }
+    .filter-btn[data-cat="2"].active { border-color: var(--c2); color: var(--c2); }
+    .filter-btn[data-cat="3"].active { border-color: var(--c3); color: var(--c3); }
+    .filter-btn[data-cat="4"].active { border-color: var(--c4); color: var(--c4); }
+    .filter-btn[data-cat="5"].active { border-color: var(--c5); color: var(--c5); }
+
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 2rem 4rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .card {
+      background: var(--surface);
+      padding: 1.25rem;
+      transition: background 0.1s;
+      cursor: default;
+    }
+
+    .card:hover { background: #1c1c1c; }
+
+    .card-top {
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .code {
+      font-size: 1.1rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.01em;
+    }
+
+    .name {
+      font-size: 0.8rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .desc {
+      font-size: 0.82rem;
+      line-height: 1.55;
+      color: #999;
+    }
+
+    .cat-1 .code { color: var(--c1); }
+    .cat-2 .code { color: var(--c2); }
+    .cat-3 .code { color: var(--c3); }
+    .cat-4 .code { color: var(--c4); }
+    .cat-5 .code { color: var(--c5); }
+
+    .no-results {
+      display: none;
+      grid-column: 1 / -1;
+      padding: 3rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .count {
+      font-size: 0.8rem;
+      color: var(--muted);
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 2rem 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>HTTP Status Guide <span>— every status code explained</span></h1>
+</header>
+
+<div class="search-wrap">
+  <input type="search" id="search" placeholder="Search by code, name, or description…" autocomplete="off" />
+</div>
+
+<div class="filters">
+  <button class="filter-btn active" data-cat="all">All</button>
+  <button class="filter-btn" data-cat="1">1xx Informational</button>
+  <button class="filter-btn" data-cat="2">2xx Success</button>
+  <button class="filter-btn" data-cat="3">3xx Redirection</button>
+  <button class="filter-btn" data-cat="4">4xx Client Error</button>
+  <button class="filter-btn" data-cat="5">5xx Server Error</button>
+</div>
+
+<div class="count" id="count"></div>
+
+<main id="grid">
+  <div class="no-results" id="no-results">No status codes match your search.</div>
+</main>
+
+<script>
+const codes = [
+  // 1xx
+  [100,"Continue","The server has received the request headers and the client should proceed to send the request body."],
+  [101,"Switching Protocols","The server is switching protocols as requested by the client via the Upgrade header."],
+  [102,"Processing","The server has received and is processing the request, but no response is available yet. (WebDAV)"],
+  [103,"Early Hints","Used to return response headers before the final HTTP message."],
+
+  // 2xx
+  [200,"OK","The request was successful. The response body contains the requested data."],
+  [201,"Created","The request was successful and a new resource was created."],
+  [202,"Accepted","The request has been accepted for processing, but processing is not yet complete."],
+  [203,"Non-Authoritative Information","The returned metadata is not from the origin server but from a local or third-party copy."],
+  [204,"No Content","The request was successful but there is no content to return."],
+  [205,"Reset Content","The request was successful; the client should reset the document view."],
+  [206,"Partial Content","The server is returning only part of the resource due to a range header in the request."],
+  [207,"Multi-Status","Provides status for multiple independent operations. (WebDAV)"],
+  [208,"Already Reported","Members of a DAV binding have already been enumerated in a previous reply. (WebDAV)"],
+  [226,"IM Used","The server fulfilled a GET request and the response is one or more instance-manipulations."],
+
+  // 3xx
+  [300,"Multiple Choices","The request has more than one possible response. The client should choose one."],
+  [301,"Moved Permanently","The resource has been permanently moved to a new URL."],
+  [302,"Found","The resource is temporarily at a different URL."],
+  [303,"See Other","The response to the request can be found at a different URL using GET."],
+  [304,"Not Modified","The resource has not been modified since the last request; use the cached version."],
+  [305,"Use Proxy","The requested resource must be accessed through a proxy. (Deprecated)"],
+  [307,"Temporary Redirect","The resource is temporarily at a different URL; the method must not change."],
+  [308,"Permanent Redirect","The resource has permanently moved to a new URL; the method must not change."],
+
+  // 4xx
+  [400,"Bad Request","The server cannot process the request due to a client error such as malformed syntax."],
+  [401,"Unauthorized","Authentication is required and has failed or not been provided."],
+  [402,"Payment Required","Reserved for future use; sometimes used for digital payment requirements."],
+  [403,"Forbidden","The client does not have permission to access the requested resource."],
+  [404,"Not Found","The server cannot find the requested resource."],
+  [405,"Method Not Allowed","The HTTP method used is not allowed for the requested resource."],
+  [406,"Not Acceptable","The resource cannot generate content acceptable to the client's Accept headers."],
+  [407,"Proxy Authentication Required","The client must authenticate with the proxy first."],
+  [408,"Request Timeout","The server timed out waiting for the request."],
+  [409,"Conflict","The request conflicts with the current state of the server."],
+  [410,"Gone","The resource has been permanently deleted and will not return."],
+  [411,"Length Required","The request did not specify a Content-Length, which is required."],
+  [412,"Precondition Failed","One or more conditions in the request header fields evaluated to false."],
+  [413,"Content Too Large","The request body is larger than the server is willing to process."],
+  [414,"URI Too Long","The URI provided was too long for the server to process."],
+  [415,"Unsupported Media Type","The media format of the request data is not supported by the server."],
+  [416,"Range Not Satisfiable","The range specified in the Range header cannot be fulfilled."],
+  [417,"Expectation Failed","The expectation indicated by the Expect request header cannot be met."],
+  [418,"I'm a Teapot","The server refuses to brew coffee because it is, permanently, a teapot. (RFC 2324)"],
+  [421,"Misdirected Request","The request was directed at a server that is not able to produce a response."],
+  [422,"Unprocessable Content","The request was well-formed but contains semantic errors."],
+  [423,"Locked","The resource being accessed is locked. (WebDAV)"],
+  [424,"Failed Dependency","The request failed due to failure of a previous request. (WebDAV)"],
+  [425,"Too Early","The server is unwilling to risk processing a request that might be replayed."],
+  [426,"Upgrade Required","The client should switch to a different protocol as specified in the Upgrade header."],
+  [428,"Precondition Required","The origin server requires the request to be conditional."],
+  [429,"Too Many Requests","The client has sent too many requests in a given amount of time (rate limiting)."],
+  [431,"Request Header Fields Too Large","The server is unwilling to process the request because header fields are too large."],
+  [451,"Unavailable For Legal Reasons","The resource is unavailable due to legal reasons, such as government censorship."],
+
+  // 5xx
+  [500,"Internal Server Error","The server encountered an unexpected condition that prevented it from fulfilling the request."],
+  [501,"Not Implemented","The server does not support the functionality required to fulfill the request."],
+  [502,"Bad Gateway","The server, acting as a gateway, received an invalid response from an upstream server."],
+  [503,"Service Unavailable","The server is not ready to handle the request, often due to maintenance or overload."],
+  [504,"Gateway Timeout","The server, acting as a gateway, did not receive a timely response from an upstream server."],
+  [505,"HTTP Version Not Supported","The HTTP version used in the request is not supported by the server."],
+  [506,"Variant Also Negotiates","The server has an internal configuration error during content negotiation."],
+  [507,"Insufficient Storage","The server cannot store the representation needed to complete the request. (WebDAV)"],
+  [508,"Loop Detected","The server detected an infinite loop while processing the request. (WebDAV)"],
+  [510,"Not Extended","Further extensions to the request are required for the server to fulfill it."],
+  [511,"Network Authentication Required","The client needs to authenticate to gain network access."],
+];
+
+const grid = document.getElementById('grid');
+const noResults = document.getElementById('no-results');
+const searchEl = document.getElementById('search');
+const countEl = document.getElementById('count');
+const filterBtns = document.querySelectorAll('.filter-btn');
+
+let activeFilter = 'all';
+
+function catOf(code) { return String(code)[0]; }
+
+function colorClass(code) { return `cat-${catOf(code)}`; }
+
+function render(query, filter) {
+  const q = query.toLowerCase().trim();
+  let visible = 0;
+
+  document.querySelectorAll('.card').forEach(card => {
+    const code = card.dataset.code;
+    const cat = catOf(code);
+    const text = card.dataset.text;
+
+    const matchFilter = filter === 'all' || cat === filter;
+    const matchQuery = !q || text.includes(q);
+    const show = matchFilter && matchQuery;
+
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+
+  noResults.style.display = visible === 0 ? 'block' : 'none';
+  countEl.textContent = `${visible} status code${visible !== 1 ? 's' : ''}`;
+}
+
+// Build cards
+const fragment = document.createDocumentFragment();
+codes.forEach(([code, name, desc]) => {
+  const card = document.createElement('div');
+  card.className = `card ${colorClass(code)}`;
+  card.dataset.code = code;
+  card.dataset.text = `${code} ${name} ${desc}`.toLowerCase();
+  card.innerHTML = `
+    <div class="card-top">
+      <span class="code">${code}</span>
+      <span class="name">${name}</span>
+    </div>
+    <p class="desc">${desc}</p>
+  `;
+  fragment.appendChild(card);
+});
+grid.insertBefore(fragment, noResults);
+
+render('', 'all');
+
+searchEl.addEventListener('input', () => render(searchEl.value, activeFilter));
+
+filterBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    filterBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.cat;
+    render(searchEl.value, activeFilter);
+  });
+});
+</script>
+</body>
+</html>
